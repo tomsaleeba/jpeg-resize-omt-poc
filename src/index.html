@@ -15,7 +15,13 @@
 
 <body>
   <h1>Hello Static HTML!</h1>
-  <button id="the-button">Decode image</button>
+  <div>
+    <button id="interact-button">Interact with me</button>
+    <div>Interaction count: <span id="interaction-count">0</span></div>
+  </div>
+  <button id="omt-button">Decode image OMT</button>
+  <button id="mainthread-button">Decode image with UI thread</button>
+  <div>Status: <span id="the-status">initial</span></div>
   <h3>Input (not actual size)</h3>
   <img src="/static/blah.jpg" alt="chicken" class="the-image" />
   <h3>Output</h3>

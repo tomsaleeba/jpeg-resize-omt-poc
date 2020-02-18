@@ -2,16 +2,34 @@ if (module.hot) {
   module.hot.accept()
 }
 
-const JPEGDecoder = require('jpg-stream/decoder')
-const er = require('exif-reader')
 const dms2dec = require('dms2dec')
 import EXIF from 'exif-js'
 import Jimp from 'jimp'
 
-async function doit2() {
-  console.log('starting resize')
+async function runOMT() {
+  setStatus('running OFF main thread')
+  const piWorker = new Worker('./worker.js', { type: 'module' })
+  piWorker.onmessage = event => {
+    const resized = event.data
+    const theBlob = new Blob([resized], { type: 'image/jpeg' })
+    const url = URL.createObjectURL(theBlob)
+    document.getElementById('the-output-image').src = url
+    setStatus('finished')
+    getExifFromBlob(theBlob).then(meta => {
+      console.log('Metadata in resized image', meta)
+    })
+  }
+  piWorker.postMessage(123)
+  // extractGps(meta)
+}
+
+function setStatus(msg) {
+  document.getElementById('the-status').innerText = msg
+}
+
+async function runMainThread() {
+  setStatus('running on main thread')
   const resp = await fetch('./static/blah.jpg')
-  const imageReadableStream = resp.body
   const buffer = await resp.arrayBuffer()
   const image = await Jimp.read(buffer)
   const resized = await image
@@ -22,10 +40,7 @@ async function doit2() {
   const theBlob = new Blob([resized], { type: 'image/jpeg' })
   const url = URL.createObjectURL(theBlob)
   document.getElementById('the-output-image').src = url
-  console.log('finished resize')
-  const meta = await getExifFromBlob(theBlob)
-  console.log('Metadata in resized image', meta)
-  // extractGps(meta)
+  setStatus('finished')
 }
 
 export function getExifFromBlob(blobish) {
@@ -51,4 +66,15 @@ function extractGps(parsedExif) {
   console.log(`lat=${latDec}, lng=${lonDec}`)
 }
 
-document.getElementById('the-button').addEventListener('mousedown', doit2)
+document.getElementById('omt-button').addEventListener('mousedown', runOMT)
+document
+  .getElementById('mainthread-button')
+  .addEventListener('mousedown', runMainThread)
+
+document.getElementById('interact-button').addEventListener('mousedown', () => {
+  const el = document.getElementById('interaction-count')
+  const oldCount = parseInt(el.innerText)
+  console.log(oldCount)
+  const newCount = oldCount + 1
+  el.innerText = newCount
+})
