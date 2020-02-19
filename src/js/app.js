@@ -2,14 +2,16 @@ if (module.hot) {
   module.hot.accept()
 }
 
-const dms2dec = require('dms2dec')
+import dms2dec from 'dms2dec'
 import EXIF from 'exif-js'
 import Jimp from 'jimp'
 
+const targetImageUrl = './static/blah.jpg'
+
 async function runOMT() {
   setStatus('running OFF main thread')
-  const piWorker = new Worker('./worker.js', { type: 'module' })
-  piWorker.onmessage = event => {
+  const theWorker = new Worker('./worker.js', { type: 'module' })
+  theWorker.onmessage = event => {
     const resized = event.data
     const theBlob = new Blob([resized], { type: 'image/jpeg' })
     const url = URL.createObjectURL(theBlob)
@@ -19,17 +21,21 @@ async function runOMT() {
       console.log('Metadata in resized image', meta)
     })
   }
-  piWorker.postMessage(123)
-  // extractGps(meta)
+  theWorker.postMessage({
+    url: targetImageUrl,
+    maxWidth: 200,
+    quality: 60,
+  })
+  extractGps(meta)
 }
 
 function setStatus(msg) {
   document.getElementById('the-status').innerText = msg
 }
 
-async function runMainThread() {
+async function runInMainThread() {
   setStatus('running on main thread')
-  const resp = await fetch('./static/blah.jpg')
+  const resp = await fetch(targetImageUrl)
   const buffer = await resp.arrayBuffer()
   const image = await Jimp.read(buffer)
   const resized = await image
@@ -69,7 +75,7 @@ function extractGps(parsedExif) {
 document.getElementById('omt-button').addEventListener('mousedown', runOMT)
 document
   .getElementById('mainthread-button')
-  .addEventListener('mousedown', runMainThread)
+  .addEventListener('mousedown', runInMainThread)
 
 document.getElementById('interact-button').addEventListener('mousedown', () => {
   const el = document.getElementById('interaction-count')

@@ -55,13 +55,9 @@
     "last 2 versions"
   ],
   "dependencies": {
-    "@jimp/plugin-resize": "^0.9.3",
     "dms2dec": "^1.1.0",
     "exif-js": "^2.3.0",
     "jimp": "^0.9.3",
-    "jpeg-exif": "^1.1.4",
-    "jpg-stream": "^1.1.2",
-    "pica": "^5.1.0",
     "piexifjs": "^1.0.6"
   }
 }

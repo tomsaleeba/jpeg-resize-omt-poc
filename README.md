@@ -3,7 +3,11 @@ Hacked together proof of concept that shows resizing a JPEG off the main thread
 
 Run with: `yarn start:dev`
 
+The goals:
+ - use webpack to build
+ - resize a JPEG off the main thread
+ - keep the EXIF/metadata for the resized image
+ - have resized image as bytes (Blob/File) for sending over HTTP
+
 TODO
- - remove unused deps
  - try to cull down how much of Jimp we pull in
- - inject metadata back into the resized image
