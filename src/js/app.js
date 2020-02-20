@@ -5,28 +5,27 @@ if (module.hot) {
 import dms2dec from 'dms2dec'
 import EXIF from 'exif-js'
 import Jimp from 'jimp'
+import { wrap as comlinkWrap } from 'comlink'
 
 const targetImageUrl = './static/blah.jpg'
 
 async function runOMT() {
   setStatus('running OFF main thread')
   const theWorker = new Worker('./worker.js', { type: 'module' })
-  theWorker.onmessage = event => {
-    const resized = event.data
-    const theBlob = new Blob([resized], { type: 'image/jpeg' })
-    const url = URL.createObjectURL(theBlob)
-    document.getElementById('the-output-image').src = url
-    setStatus('finished')
-    getExifFromBlob(theBlob).then(meta => {
-      console.log('Metadata in resized image', meta)
-    })
-  }
-  theWorker.postMessage({
+  const comlinkedWorker = comlinkWrap(theWorker)
+  const resized = await comlinkedWorker.resize({
     url: targetImageUrl,
     maxWidth: 200,
     quality: 60,
   })
-  extractGps(meta)
+  const theBlob = new Blob([resized], { type: 'image/jpeg' })
+  const url = URL.createObjectURL(theBlob)
+  document.getElementById('the-output-image').src = url
+  setStatus('finished')
+  getExifFromBlob(theBlob).then(meta => {
+    console.log('Metadata in resized image', meta)
+    extractGps(meta)
+  })
 }
 
 function setStatus(msg) {
@@ -62,12 +61,12 @@ export function getExifFromBlob(blobish) {
 }
 
 function extractGps(parsedExif) {
-  console.log(parsedExif.gps)
+  console.log(parsedExif)
   const [latDec, lonDec] = dms2dec(
-    parsedExif.gps.GPSLatitude,
-    parsedExif.gps.GPSLatitudeRef,
-    parsedExif.gps.GPSLongitude,
-    parsedExif.gps.GPSLongitudeRef,
+    parsedExif.GPSLatitude,
+    parsedExif.GPSLatitudeRef,
+    parsedExif.GPSLongitude,
+    parsedExif.GPSLongitudeRef,
   )
   console.log(`lat=${latDec}, lng=${lonDec}`)
 }
